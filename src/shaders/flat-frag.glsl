@@ -139,6 +139,7 @@ float sdBox( vec3 p, vec3 b )
 }
 
 
+// Smooth Operations
 float opSmoothSubtraction( float d1, float d2, float k ) {
   float h = clamp( 0.5 - 0.5*(d2+d1)/k, 0.0, 1.0 );
   return mix( d2, -d1, h ) + k*h*(1.0-h); 
@@ -157,6 +158,8 @@ float sminCubic( float a, float b, float k )
 }
 
 
+// Other Operations
+
 float rounding(float d, float h )
 {
     return d - h;
@@ -164,12 +167,11 @@ float rounding(float d, float h )
 
 vec4 opElongate( in vec3 p, in vec3 h )
 {
-    //return vec4( p-clamp(p,-h,h), 0.0 ); // faster, but produces zero in the interior elongated box
-    
     vec3 q = abs(p)-h;
     return vec4( max(q,0.0), min(max(q.x,max(q.y,q.z)),0.0) );
 }
 
+// Rotations
 vec3 rotateY( in vec3 p, float t )
 {
     float co = cos(t);
@@ -193,7 +195,7 @@ vec3 rotateZ( in vec3 p, float t )
     return p;
 }
 
-
+// Toolbox Functions
 float cubicPulse(float c, float w, float x) {
   x = abs(x - c);
   if (x > w) {
@@ -216,7 +218,7 @@ float gain(float g, float t) {
   }
 }
 
-
+// My SDFs
 float sdHead(vec3 pos) {
   float d3 = sdSphere(pos - vec3(0.0, 0.8, 0.0), 1.1);
   float d4 = sdSphere(pos - vec3(0.0, 1.6, 0.0), 1.5);
@@ -241,13 +243,9 @@ float sdArm(vec3 pos, vec3 dim, float angle1, float angle2) {
 }
 
 
+// SceneMap (no object type)
 float sceneMap3D(vec3 pos) {
-  //float t = sdSphere(pos - vec3(0.0, 2.0, 0.0), 1.0);
-  //float t = sdVerticalCapsule( pos, 2.0, 1.0);
-  //float t1 = sdRoundCone(pos + vec3(0.0, 2.0, 0.0), 0.7, 1.5, 4.0);
 
-  //float t = 1e10;
-  
   // Body
   float d1 = sdEllipsoid(pos, vec3(1.2, 3.5, 1.2));
   float d2 = sdSphere(pos - vec3(0.0, 1.8, 0.0), 2.0);
@@ -276,7 +274,6 @@ float sceneMap3D(vec3 pos) {
 
   float face = opSmoothIntersection(d3, d4, 0.2);
 
-  //t1 = min(t1, face);
   t1 = sminCubic(t1, face, 0.1);
 
   // Left Arm
@@ -318,22 +315,13 @@ float sceneMap3D(vec3 pos) {
 }
 
 
+// Scene Map with object type and bounding volume
 void sceneMap3D(vec3 pos, out float t, out int obj) {
   
-  // Main Bounding Box 
-  // float bound = sdBox(vec3(1.6, -1.5, 0.0), vec3(-1.6, -1.5, 0.0));
-  // if (bound < t) {
-  //   t = bound;
-  //   obj = 0;
-  // }
-
   t = 10.0;
 
-  //vec3(10.0, 4.0, -15.0)
   float bound = sdBox(pos + vec3(0.0, 0.7, 0.0), vec3(2.0, 2.8, 1.5));
-  // if (bound > t) {
-  //   return;
-  // }
+
   if (bound < t) {
 
     float boundHead = sdBox(pos + vec3(0.0, -1.0, 0.0), vec3(1.2, 0.9, 1.3));
@@ -352,7 +340,6 @@ void sceneMap3D(vec3 pos, out float t, out int obj) {
 
       float face = opSmoothIntersection(d3, d4, 0.2);
       face = opSmoothIntersection(face, d5, 0.2);
-      //face = min(face, d5);
 
       if (face < t) {
         t = face;
@@ -362,29 +349,17 @@ void sceneMap3D(vec3 pos, out float t, out int obj) {
       // Eyes
       //vec3 q = rotateZ(pos - vec3(0.27, 0.87, -1.0), 0.4);
       vec3 q = (pos - vec3(0.27, 0.87, -1.0)) * vec3(0.9, 1.4, 1.0);
-      //vec3 q = pos;
-      //float time = cubicPulse(0.0, 1.0, sin(u_Time / 10.0));
-      //float time = smoothstep(-0.0, 0.7, sin(u_Time / 10.0)) * 3.0;
       
       float time = 0.0;
       if (u_Anim) {
         time = sin(u_Time / 20.0) * 4.0;
       }
-      float k = 0.0 - time; // or some other amount
+      float k = 0.0 - time;
       float c = cos(k * q.x);
       float s = sin(k * q.x);
       mat2  m = mat2(c, -s, s, c);
       vec2 mq = m * q.xy;
       q = vec3(q.x, mq.y, q.z);
-      //vec3  q2 = vec3(m * q.xy, q.z);
-      //return primitive(q);
-
-      // float co = cos(0.4 * q.x);
-      // float si = sin(0.4 * q.x);
-      // q.xy = mat2(co,-si,si,co) * q.xy;
-
-      //q = rotateZ(q, 0.4);
-      //q = rotateZ(q - vec3(0.27, 0.87, -1.0), 0.4);
 
       float d6 = length((q)) - 0.22;
       if (d6 < t) {
@@ -394,8 +369,7 @@ void sceneMap3D(vec3 pos, out float t, out int obj) {
 
       vec3 q2 = (pos - vec3(-0.27, 0.87, -1.0)) * vec3(0.9, 1.4, 1.0);
 
-      //float time = sin(u_Time / 30.0) * 4.0;
-      k = 0.0 - time; // or some other amount
+      k = 0.0 - time; 
       c = cos(k * q2.x);
       s = sin(k * q2.x);
       m = mat2(c, -s, s, c);
@@ -493,15 +467,6 @@ vec3 calculateNormals(vec3 pos)
 }
 
 
-// vec3 computeNormal(vec3 pos)
-// {
-//     vec3 epsilon = vec3(0.0, 0.001, 0.0);
-//     return normalize( vec3( sceneMap3D(pos + epsilon.yxx) - sceneMap3D(pos - epsilon.yxx),
-//                             sceneMap3D(pos + epsilon.xyx) - sceneMap3D(pos - epsilon.xyx),
-//                             sceneMap3D(pos + epsilon.xxy) - sceneMap3D(pos - epsilon.xxy)));
-// }
-
-
 float fresnel(float bias, float scale, float power, vec3 I, vec3 N)
 {
     return bias + scale * pow(1.0 + dot(I, N), power);
@@ -509,7 +474,6 @@ float fresnel(float bias, float scale, float power, vec3 I, vec3 N)
 
 float square_wave(float x, float freq, float amplitude) {
   float val = abs(mod(floor(x * freq), 2.0) * amplitude);
-  //return abs(floor(x * freq) % 2.0 * amplitude);
   return val;
 }
 
@@ -536,10 +500,6 @@ void main() {
 
   vec3 lightPos = vec3(8.0, 4.0, -15.0);
 
-  // Virtual camera
-  //float sx = (2.0 * fs_Pos.x / u_Dimensions.x) - 1.0;
-  //float sy = 1.0 - (2.0 * fs_Pos.y / u_Dimensions.y);
-
   vec3 forward = normalize(u_Ref - u_Eye);
   vec3 right = cross(forward, u_Up);
 
@@ -555,60 +515,33 @@ void main() {
   float t = 0.001;
   vec3 ray_p = u_Eye + t * dir;
 
-
+  // Background Color
   vec3 night_sky = vec3(0.0, 0.0, 0.0);
   vec3 white = vec3(0.54, 0.0, 0.54);
   vec3 col = mix(night_sky, white, noised(vec2(fs_Pos.x, fs_Pos.y) * 3.0));
 
-  //vec3 col = vec3(0.5 * (dir + vec3(1.0, 1.0, 1.0)));
-
 
   for (int i = 0; i < 50; i++) {
     vec3 isect = u_Eye + t * dir;
-    //float dist = sceneMap3D(isect);
     float dist = 10.0;
     int obj = -1;
     sceneMap3D(isect, dist, obj);
-    // 1e-4 
+
     if (dist <= 0.001) {
       //col = vec3(0.0, 0.0, 0.0);
       vec3 nor = calculateNormals(isect);
       vec3 lightDir = normalize(lightPos - isect);
       col = computeMaterial(obj, isect, nor, lightDir, normalize(u_Eye - isect));
 
-
-      // From Adam glossy
-      //float fresnel = 1.0 - max(0.0, dot(normalize(u_Eye - isect), nor));
-      //fresnel = 0.25 + 0.75 * fresnel;
-      //vec3 sdfColor = mix(col, vec3(0.0, 0.0, 0.0), fresnel);
-
-      // // Calculate the diffuse term for Lambert shading
-      // float diffuseTerm = dot(normalize(nor), normalize(lightDir));
-      // diffuseTerm = clamp(diffuseTerm, 0.0, 1.0);
-      // float ambientTerm = 0.2;
-      // float lightIntensity = diffuseTerm + ambientTerm;
-      // // The normalized average of the cmaera position and the light vector
-      // vec3 h = normalize(u_Eye + lightDir) / 2.0;
-      // // Compute the intensity of the specular highlight
-      // float specularIntensity = max(pow(dot(normalize(h), normalize(nor)), 10.0), 0.0);
-      // // Compute final shaded color
-      // col = clamp(vec3(col * (lightIntensity + specularIntensity)), 0.0, 1.0);
-      
-
       float diffuse = max(0.0, dot(lightDir, nor)) / 1.0;
       float specular = pow(diffuse, 200.);
       //float R = fresnel(0.2, 1.4, 2.0, isect, nor);
       float fresnel = 1.0 - max(0.0, dot(normalize(u_Eye - isect), nor));
       col = vec3(diffuse * col + specular*0.9 + fresnel * 0.7);
-      //col = vec3(diffuse, diffuse, diffuse);
     }
     t += dist;
     
   }
 
-
-  //color = 0.5 * (dir + vec3(1.0, 1.0, 1.0))
   out_Col = vec4(col, 1.0);
-
-  //out_Col = vec4(0.5 * (fs_Pos + vec2(1.0)), 0.5 * (sin(u_Time * 3.14159 * 0.01) + 1.0), 1.0);
 }
