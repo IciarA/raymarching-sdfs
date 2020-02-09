@@ -48,39 +48,6 @@ float noised( vec2 p )
 
 
 
-float interpNoise2D(vec2 p) {
-    vec2 intP = floor(p);
-    vec2 fractP = fract(p);
-
-    // Get a random value from each of the 4 corners that contain point p
-    float v1 = rand(intP);
-    float v2 = rand(intP + vec2(1.0, 0.0));
-    float v3 = rand(intP + vec2(0.0, 1.0));
-    float v4 = rand(intP + vec2(1.0, 1.0));
-
-    vec2 u = fractP * fractP * (3.0f - 2.0f * fractP);
-
-    return mix(v1, v2, u.x) + (v3 - v1)* u.y * (1.0 - u.x) + (v4 - v2) * u.x * u.y;
-}
-
-float fbm3 (vec2 p) {
-    // Initialize the variables to be used
-    float total = 0.0;
-    float amplitude = 0.5;
-    int octaves = 12;
-
-    // For loop that interates through octaves
-    for (int i = 0; i < octaves; i++) {
-        total += amplitude * interpNoise2D(p);
-        p *= 1.5;
-        amplitude *= .5;
-    }
-
-    return total;
-}
-
-
-
 
 // SDFs
 
